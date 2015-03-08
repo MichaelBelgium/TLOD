@@ -6,7 +6,7 @@ The Land Of Death - A SA:MP Zombie gamemode (rescript)
 I never got in touch of a zombie gamemode but i grabbed one from the San Andreas Multiplayer Forums and made an own zombie script based of the script from the forums. Now it's an open source zombie gamemode with several features. Upcoming edits are planned and ofcourse more stuff.
 
 <h2>Features</h2>
-* SQL Register/login (R2
+* SQL Register/login
 * Inventory system
 * Loot system
 * Needs system (hunger, sleep, thirst)
