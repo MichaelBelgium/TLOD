@@ -27,6 +27,7 @@ Plugins:
 
 Includes:
 * <a href="https://github.com/Southclaw/progress2">Progress2</a> (for the needs system)
+* <a href="http://forum.sa-mp.com/showthread.php?t=91354">ZCMD</a> (command processor)
 
 
 <h2>Settings</h2>
