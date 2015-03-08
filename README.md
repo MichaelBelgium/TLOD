@@ -73,3 +73,11 @@ stock SavePlayerInventory(playerid);
 
 public OnPlayerInventoryLoad(playerid)
 ```
+
+<h2>Credits</h2>
+* <a href="http://forum.sa-mp.com/showthread.php?t=528864">VinPure</a>, without him i couldn't <a href="http://forum.sa-mp.com/showthread.php?t=528864">get started</a>
+* Y_Less, Sscanf
+* BlueG/maddinat0r, MySQL plugin
+* Kalcor, MapAndreas
+* SouthClaw, progress2
+* Me, re-scripting from scratch
