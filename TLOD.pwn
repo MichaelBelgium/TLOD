@@ -142,7 +142,7 @@
 #define MAX_DEERS       50
 #define MAX_TREES       450
 
-#define SQL_PASSWORD    "YVsRzeN83WMmJU8t"
+#define SQL_PASSWORD    ""
 #define SQL_USER        "TLOD"
 #define SQL_DB          "TLOD"
 #define SQL_SERVER      "127.0.0.1"
