@@ -41,10 +41,13 @@ Basic defines/settings:
 #define MAX_ZOMBIES     100
 #define MAX_PLAYERS     30
 #define MAX_VEHICLES    50
-#define MAX_ITEMS       350
 #define MAX_INV_ITEMS   50
+
+//try to do the total amount less than 1000 (1000 = max objects)
+#define MAX_ITEMS       350
 #define MAX_DEERS       50
 #define MAX_TREES       450
+#define MAX_BOXES		    100
 
 #define SQL_PASSWORD    ""
 #define SQL_USER        "TLOD"
