@@ -1,3 +1,10 @@
+/*
+V1.1
+ * When the deers are moving, mapandreas gets used now. (to prevent floating deers in the air)
+ * Added boxes (craftable, /addboxitem /getboxitem - max 10 DIFFERENT items in boxes) 
+ * When dropping items, the item spawns somewhere randomly near you (not on a fixed pos)
+*/
+
 #include <a_samp>
 #include <sscanf2>
 #include <a_mysql>
@@ -137,12 +144,15 @@
 #define MAX_ZOMBIES     100
 #define MAX_PLAYERS     30
 #define MAX_VEHICLES    50
-#define MAX_ITEMS       350
 #define MAX_INV_ITEMS   50
+
+//try to do the total amount less than 1000 (1000 = max objects)
+#define MAX_ITEMS       350
 #define MAX_DEERS       50
 #define MAX_TREES       450
+#define MAX_BOXES		100
 
-#define SQL_PASSWORD    ""
+#define SQL_PASSWORD    "YVsRzeN83WMmJU8t"
 #define SQL_USER        "TLOD"
 #define SQL_DB          "TLOD"
 #define SQL_SERVER      "127.0.0.1"
@@ -216,6 +226,16 @@ enum e_trees
 };
 
 new Trees[MAX_TREES][e_trees];
+
+enum e_boxes
+{
+	BoxObject,
+	Float:SpawnPos[3],
+	b_Items[10]
+	//owner ??
+};
+
+new Boxes[MAX_BOXES][e_boxes];
 
 enum e_vehicles
 {
@@ -516,7 +536,7 @@ public OnGameModeInit()
 	ZombieInit();
 	ItemInit();
 
-	Loop(MAX_VEHICLES) Vehicles[i][Veh] = INVALID_VEHICLE_ID;
+	
 
     mysql_tquery(g_SQL,"SELECT * FROM tree_data","OnTreesLoaded");
     mysql_tquery(g_SQL,"SELECT * FROM vehicle_data","OnVehiclesLoaded");
@@ -1146,7 +1166,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						Loop(MAX_VEHICLES)
 						{
 							if(Vehicles[i][Veh] == INVALID_VEHICLE_ID) continue;
-							//if(IsPlayerInRangeOfPoint(playerid,3.0,Vehicles[i][SpawnPos][0],Vehicles[i][SpawnPos][1],Vehicles[i][SpawnPos][2]))
 							if(IsPlayerInVehicle(playerid,Vehicles[i][Veh]))
 							{
 								if(Vehicles[i][Engine])
@@ -1158,6 +1177,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 							}
 						}
 						if(!found) return SendClientMessage(playerid,COLOR_RED,"You need to be in a vehicle to use this item.");
+					}
+					case ModelBox:
+					{
+						new Float:pos[3];
+						GetPlayerPos(playerid, pos[0], pos[1], pos[2]);
+						CreateBox(pos[0]+frandom(2.0), pos[1]+frandom(2.0), pos[2]);
 					}
 					case ModelDeerSkin, ModelCU, ModelIron, ModelWood: return SendClientMessage(playerid,COLOR_RED,"This item is used to craft");
 					case ModelFishRob: 	return SendClientMessage(playerid,COLOR_RED, "This item is used for /fish - You only can drop it");
@@ -1176,7 +1201,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 		    if(response)
 		    {
-		        print(inputtext);
                 mysql_format(g_SQL, m_string, sizeof(m_string), "SELECT * FROM user_data WHERE Name = '%e' AND Password = SHA1('%s')", Player[playerid][Name],inputtext);
 				mysql_tquery(g_SQL, m_string, "OnPlayerLogin", "d", playerid);
 			}
@@ -1241,6 +1265,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelRope));
 						CreateItem(ModelFishRob, 1,pos[0],pos[1],pos[2],0,0,0);
 					}
+
+					case 5: //box
+					{
+						if(!IsItemInInventory(playerid,ModelWood,10)) return SendClientMessage(playerid, COLOR_RED, "You can't craft this item.");
+						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelWood), 10);
+						CreateItem(ModelBox, 1, pos[0],pos[1],pos[2],0,0,0);
+					}
 				}
 				ApplyAnimation(playerid, "BOMBER", "BOM_Plant_Loop", 4.1, false, 1, 1, 0, 4000, 1);
 				GivePlayerExperience(playerid,1);
@@ -1301,6 +1332,68 @@ CMD:help(playerid, params[])
 	return 1;
 }
 
+CMD:viewbox(playerid,params[])
+{
+	new view[256*2];
+	Loop(MAX_BOXES)
+	{
+		if(IsPlayerInRangeOfPoint(playerid,2,Boxes[i][SpawnPos][0],Boxes[i][SpawnPos][1],Boxes[i][SpawnPos][2]))
+		{
+			for(new z = 0; z < 10; z++)
+			{
+				if(Boxes[i][b_Items][z] == -1) continue;
+				format(s_string, sizeof(s_string), "[Slot: %d] %s (%d)\n", z, GetItemName(Boxes[i][b_Items][z]),Boxes[i][b_Items][z]);
+				strcat(view, s_string);
+			}
+		}
+	}
+	ShowPlayerDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_MSGBOX, "Box items:", view, "OK", "");
+	return 1;
+}
+
+CMD:getboxitem(playerid,params[])
+{
+	new slot;
+	if(IsInventoryFull(playerid)) return SendClientMessage(playerid, COLOR_RED, "Your inventory is full.");
+	if(sscanf(params, "d", slot)) return SendClientMessage(playerid, COLOR_RED, "Usage: /getboxitem [slot]");
+	Loop(MAX_BOXES)
+	{
+		if(IsPlayerInRangeOfPoint(playerid,2,Boxes[i][SpawnPos][0],Boxes[i][SpawnPos][1],Boxes[i][SpawnPos][2]))
+		{
+			if(Boxes[i][b_Items][slot] == -1) return SendClientMessage(playerid, COLOR_RED, "This slot is empty");
+			AddItemToInventory(playerid, Boxes[i][b_Items][slot]);
+			format(m_string,sizeof(m_string),"You've picked item %s (%d) from the box.",GetItemName(Boxes[i][b_Items][slot]),Boxes[i][b_Items][slot]);
+			SendClientMessage(playerid, COLOR_GREEN, m_string);
+			Boxes[i][b_Items][slot] = -1;
+			break;
+		}
+	}
+	return 1;
+}
+
+CMD:addboxitem(playerid,params[])
+{
+	new slot, item, bool:found = false;
+	if(sscanf(params, "dd", slot, item)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot] [item]");
+	if(slot < 0 || slot > 9) return SendClientMessage(playerid, COLOR_RED, "Invalid slot");
+	if(!IsItemInInventory(playerid,item)) return SendClientMessage(playerid, COLOR_RED, "You don't have this item");
+	Loop(MAX_BOXES)
+	{
+		if(IsPlayerInRangeOfPoint(playerid,2,Boxes[i][SpawnPos][0],Boxes[i][SpawnPos][1],Boxes[i][SpawnPos][2]))
+		{
+			if(Boxes[i][b_Items][slot] != -1) return SendClientMessage(playerid, COLOR_RED, "This slot is taken.");
+			Boxes[i][b_Items][slot] = item;
+			RemoveItemFromInventory(playerid, GetItemInInventory(playerid,item));
+			format(m_string,sizeof(m_string),"You added the item %s (%d) in the box.",GetItemName(item),item);
+			SendClientMessage(playerid, COLOR_GREEN, m_string);
+			found = true;
+			break;
+		}
+	}
+	if(!found) SendClientMessage(playerid, COLOR_RED, "You're not near a box !");
+	return 1;
+}
+
 CMD:fish(playerid,params[])
 {
 	if(!IsPlayerInPointFish(playerid)) return SendClientMessage(playerid, COLOR_RED, "You're not near a fish point");
@@ -1322,17 +1415,6 @@ CMD:gps(playerid,params[])
 {
 	if(!IsItemInInventory(playerid,ModelGpsMap)) return SendClientMessage(playerid, COLOR_RED, "You don't have a GPS.");
 	ShowPlayerDialog(playerid, DIALOG_GPS, DIALOG_STYLE_LIST, "GPS", "Mine 1\nMine 2\nFish point 1\nFish point 2\nFish point 3", "Go", "Cancel");
-	return 1;
-}
-
-CMD:test(playerid,params[])
-{
-    new weapons[13][2];
-    for (new i = 0; i <= 12; i++)
-	{
-		GetPlayerWeaponData(playerid, i, weapons[i][0], weapons[i][1]);
-        printf("Slot: %d - Weapons: %d (%d)",i, weapons[i][0], weapons[i][1]);
-    }
 	return 1;
 }
 
@@ -1378,7 +1460,7 @@ CMD:lights(playerid, params[])
 
 CMD:craft(playerid,params[])
 {
-	ShowPlayerDialog(playerid,DIALOG_CRAFT,DIALOG_STYLE_LIST,"Crafting","Chainsaw [Needs: 3 iron, 1 rope]\nKnife [Needs: 1 wood, 1 iron]\nBed [Needs: 2 Deer skins, 4 wood]\nToolbox [Needs: 3 Copper, 2 Iron, 1 wood]\nFishing Rob [Needs: 1 iron, 1 wood, 1 rope]","Craft","Cancel");
+	ShowPlayerDialog(playerid,DIALOG_CRAFT,DIALOG_STYLE_LIST,"Crafting","Chainsaw [Needs: 3 iron, 1 rope]\nKnife [Needs: 1 wood, 1 iron]\nBed [Needs: 2 Deer skins, 4 wood]\nToolbox [Needs: 3 Copper, 2 Iron, 1 wood]\nFishing Rob [Needs: 1 iron, 1 wood, 1 rope]\nBox [Needs: 10 woods]","Craft","Cancel");
 	return 1;
 }
 
@@ -1425,10 +1507,11 @@ CMD:sleep(playerid,params[])
 CMD:giveitem(playerid,params[])
 {
     if(Player[playerid][Adminlevel] < 3) return 0;
-    new model,id;
-    if(sscanf(params,"ud",id,model)) return SendClientMessage(playerid,COLOR_RED,"/giveitem [player] [modelid]");
+    new model,id,amount;
+    if(sscanf(params,"udd",id,model,amount)) return SendClientMessage(playerid,COLOR_RED,"/giveitem [player] [modelid] [amount]");
+    if(amount <= 0) return SendClientMessage(playerid, COLOR_RED, "Invalid amount");
 	if(IsInventoryFull(playerid)) return SendClientMessage(playerid,COLOR_RED,"The inventory of this player is full !");
-	AddItemToInventory(id,model);
+	AddItemToInventory(id,model,amount);
 	return 1;
 }
 
@@ -1694,7 +1777,7 @@ stock GetItemName(model)
 
 stock CreateTree(model,Float:x,Float:y,Float:z)
 {
-	Loop(sizeof(Trees))
+	Loop(MAX_TREES)
 	{
 		if(Trees[i][TreeObject] != INVALID_OBJECT_ID) continue;
 		
@@ -1710,6 +1793,21 @@ stock CreateTree(model,Float:x,Float:y,Float:z)
 		break;
 	}
 	
+}
+
+stock CreateBox(Float:x ,Float:y, Float:z)
+{
+	Loop(MAX_BOXES)
+	{
+		if(Boxes[i][BoxObject] != INVALID_OBJECT_ID) continue;
+		Boxes[i][BoxObject] = CreateObject(ModelBox, x+1, y, z-0.6, 0.0, 0.0, 0.0);
+		Boxes[i][SpawnPos][0] = x;
+		Boxes[i][SpawnPos][1] = y;
+		Boxes[i][SpawnPos][2] = z;
+		for(new index = 0; index < 10; index++) Boxes[i][b_Items][index] = -1;
+		printf("Box %d created on pos %0.2f %0.2f %0.2f",i,x,y,z);
+		break;
+	}
 }
 
 stock CreateCar(model,Float:x,Float:y,Float:z,Float:rot)
@@ -1805,9 +1903,10 @@ stock Float:frandom(Float:max, Float:min = 0.0, dp = 4)
 
 stock ItemInit()
 {
-	Loop(sizeof(Items)) Items[i][ItemObject] = INVALID_OBJECT_ID;
-	Loop(sizeof(Trees)) Trees[i][TreeObject] = INVALID_OBJECT_ID;
-	Loop(sizeof(Deers))
+	Loop(MAX_ITEMS) Items[i][ItemObject] = INVALID_OBJECT_ID;
+	Loop(MAX_TREES) Trees[i][TreeObject] = INVALID_OBJECT_ID;
+	Loop(MAX_BOXES) Boxes[i][BoxObject] = INVALID_OBJECT_ID;
+	Loop(MAX_DEERS)
 	{
 		new Random = random(sizeof(DeerSpawn));
 		Deers[i] = CreateObject(19315,DeerSpawn[Random][0],DeerSpawn[Random][1],DeerSpawn[Random][2],0,0,0);
@@ -1815,10 +1914,10 @@ stock ItemInit()
 		SetTimerEx("MoveDeer",3000,true,"i",i);
  	}
 
-    Server_Data[iFood] = 	{ModelPizza,ModelBurger,ModelSoda,ModelWater,ModelEWater };
-	Server_Data[iBuild] = 	{ModelHammer, ModelGate1, ModelGate2, ModelWall, ModelWalldoor};
-	Server_Data[iWeapons] = {Model9mm, ModelSilenced, ModelDeagle, ModelShotgun, ModelSawnoff, ModelMp5};
-	Server_Data[iStuff] = 	{ModelBag10, ModelBag20, ModelBag30, ModelBag40, ModelBag50, ModelGpsMap, ModelGascan, ModelEGascan};
+    Server_Data[iFood] 		= {ModelPizza,ModelBurger,ModelSoda,ModelWater,ModelEWater };
+	Server_Data[iBuild] 	= {ModelHammer, ModelGate1, ModelGate2, ModelWall, ModelWalldoor};
+	Server_Data[iWeapons] 	= {Model9mm, ModelSilenced, ModelDeagle, ModelShotgun, ModelSawnoff, ModelMp5};
+	Server_Data[iStuff] 	= {ModelBag10, ModelBag20, ModelBag30, ModelBag40, ModelBag50, ModelGpsMap, ModelGascan, ModelEGascan};
 
 	Loop(MAX_ITEMS-50) CreateRandomItemInArea(-2743.408447, -2880.190673, -263.408447, -728.190673);
 
@@ -1890,8 +1989,8 @@ stock DropItemFromInventory(playerid,slot)
    		printf("[DropItemFromInv] Item %s (%d) removed from slot %d by %s (%d)", GetItemName(PlayerInv[playerid][slot][Item]),PlayerInv[playerid][slot][Item],slot,Player[playerid][Name],playerid);
    		new Float:pos[3];
 	    GetPlayerPos(playerid,pos[0],pos[1],pos[2]);
-	    MapAndreas_FindZ_For2DCoord(pos[0]+5,pos[1],pos[2]);
-        CreateItem(PlayerInv[playerid][slot][Item],1,pos[0]+5,pos[1],pos[2],0.0, 0.0, 0.0);
+	    MapAndreas_FindZ_For2DCoord(pos[0]+frandom(2.0,-2.0),pos[1]+frandom(2.0,-2.0),pos[2]);
+        CreateItem(PlayerInv[playerid][slot][Item],1,pos[0]+frandom(2.0,-2.0),pos[1]+frandom(2.0,-2.0),pos[2],0.0, 0.0, 0.0);
 		format(m_string,sizeof(m_string),"You dropped item %s (%d) from slot %d",PlayerInv[playerid][slot][Name],PlayerInv[playerid][slot][Item],slot);
 		SendClientMessage(playerid,COLOR_RED,m_string);
 		if(PlayerInv[playerid][slot][Amount] > 1) PlayerInv[playerid][slot][Amount]--;
@@ -1920,6 +2019,7 @@ stock AddItemToInventory(playerid,modelid,amount = 1)
 	{
 	    new slot = GetItemInInventory(playerid,modelid);
         PlayerInv[playerid][slot][Amount] += amount;
+        SendClientMessage(playerid, COLOR_GREEN, "You stacked the item(s)");
         printf("[AddItemToInv] %d Item(s) (%s (%d)) added into slot %d from %s (%d)",amount, GetItemName(modelid),modelid,slot,Player[playerid][Name],playerid);
 	}
 	else
@@ -2040,7 +2140,7 @@ public OnPlayerAccountCheck(playerid)
 
 		if(!strcmp(tmp,Player[playerid][IP]))
 		{
-			printf("Auto login");
+			print("Auto login");
 		}
 		else
 		{*/
@@ -2058,6 +2158,8 @@ public OnPlayerAccountCheck(playerid)
 
 public OnVehiclesLoaded()
 {
+	Loop(MAX_VEHICLES) Vehicles[i][Veh] = INVALID_VEHICLE_ID;
+
 	new rows = cache_get_row_count();
 	if(rows != 0)
 	{
@@ -2114,13 +2216,13 @@ public OnPlayerInventoryLoad(playerid)
 
 public MoveDeer(deerid)
 {
-    new Float:x,Float:y,Float:z,Float:rx,Float:ry,Float:rz;
-	GetObjectRot(Deers[deerid],rx,ry,rz);
-	if(rx < 90)
-	{
-		GetObjectPos(Deers[deerid],x,y,z);
-		MoveObject(Deers[deerid],x+frandom(2,-2),y+frandom(2,-2),z,2);
-	}
+    new Float:pos[3],Float:rand[2];
+	GetObjectPos(Deers[deerid],pos[0],pos[1],pos[2]);
+
+	rand[0] = frandom(2, -2);
+	rand[1] = frandom(2, -2);
+	MapAndreas_FindZ_For2DCoord(pos[0]+rand[0],pos[1]+rand[1],pos[2]);
+	MoveObject(Deers[deerid],pos[0]+rand[0],pos[1]+rand[1],pos[2],2);
 }
 public RespawnDeer(deerid)
 {
