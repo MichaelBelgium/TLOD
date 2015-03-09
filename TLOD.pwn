@@ -1,5 +1,5 @@
 /*
-V1.1
+Current Updates
  * When the deers are moving, mapandreas gets used now. (to prevent floating deers in the air)
  * Added boxes (craftable, /addboxitem /getboxitem - max 10 DIFFERENT items in boxes) 
  * When dropping items, the item spawns somewhere randomly near you (not on a fixed pos)
