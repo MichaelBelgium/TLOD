@@ -85,3 +85,17 @@ public OnPlayerInventoryLoad(playerid)
 * Kalcor, MapAndreas
 * SouthClaw, progress2
 * Me, re-scripting from scratch
+
+<h2>Media</h2>
+
+The area where items get randomly created
+<img src="http://pat.exp-gaming.net/TLOD/TLOD.png" />
+
+Inventory:
+<img src="http://pat.exp-gaming.net/TLOD/TLOD1.png" />
+
+Progress bars for hunger, thirst, sleep and experience/level:
+<img src="http://pat.exp-gaming.net/TLOD/TLOD2.png" />
+
+Some dropped items:
+<img src="http://pat.exp-gaming.net/TLOD/TLOD3.png" />
