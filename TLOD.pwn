@@ -150,7 +150,7 @@ Current updates:
 #define MAX_TREES		450
 #define MAX_BOXES       100
 
-#define SQL_PASSWORD    "YVsRzeN83WMmJU8t"
+#define SQL_PASSWORD    ""
 #define SQL_USER        "TLOD"
 #define SQL_DB          "TLOD"
 #define SQL_SERVER      "127.0.0.1"
