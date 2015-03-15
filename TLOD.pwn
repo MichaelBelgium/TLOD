@@ -1,3 +1,9 @@
+/*
+Current updates:
+ * Edited some commands
+ * Added /cmds and /acmds
+*/
+
 #include <a_samp>
 #include <sscanf2>
 #include <a_mysql>
@@ -10,129 +16,128 @@
 #undef  MAX_PLAYERS
 #undef 	MAX_VEHICLES
 
-#define COLOR_INVISIBLE 		0xFFFFFF00
-#define COLOR_WHITE 			0xFFFFFFFF
-#define COLOR_BLACK 			0x000000FF
-#define COLOR_BLUE 				0x0000DDFF
-#define COLOR_RED2          	0xFF0000AA
-#define COLOR_RED 				0xAA3333AA
-#define COLOR_GREEN 			0x00FF00FF
-#define COLOR_PURPLE 			0xC2A2DAAA
-#define COLOR_YELLOW 			0xFFFF00AA
-#define COLOR_YELLOWORANGE 		0xE8D600FF
-#define COLOR_GREY 				0xAFAFAFAA
-#define COLOR_ORANGE 			0xFF5F11FF
-#define COLOR_BROWN 			0x804000FF
-#define COLOR_CYAN 				0x00FFFFFF
-#define COLOR_PINK 				0xFF80C0FF
+#define COLOR_INVISIBLE 0xFFFFFF00
+#define COLOR_WHITE 	0xFFFFFFFF
+#define COLOR_BLACK 	0x000000FF
+#define COLOR_BLUE 		0x0000DDFF
+#define COLOR_RED2      0xFF0000AA
+#define COLOR_RED 		0xAA3333AA
+#define COLOR_GREEN 	0x00FF00FF
+#define COLOR_PURPLE 	0xC2A2DAAA
+#define COLOR_YELLOW 	0xFFFF00AA
+#define COLOR_GREY 		0xAFAFAFAA
+#define COLOR_ORANGE 	0xFF5F11FF
+#define COLOR_BROWN 	0x804000FF
+#define COLOR_CYAN 		0x00FFFFFF
+#define COLOR_PINK 		0xFF80C0FF
 
-#define CHAT_WHITE 				"{FFFFFF}"
-#define CHAT_GREY 				"{AFAFAF}"
-#define CHAT_RED 				"{FF0000}"
-#define CHAT_YELLOW 			"{FFFF00}"
-#define CHAT_LIGHTBLUE 			"{33CCFF}"
-#define CHAT_BLACK          	"{0E0101}"
-#define CHAT_GREEN	          	"{6EF83C}"
-#define CHAT_ORANGE         	"{FFAF00}"
-#define CHAT_LIME           	"{B7FF00}"
-#define CHAT_CYAN           	"{00FFEE}"
-#define CHAT_PARAM   	       	"{3FCD02}"
-#define CHAT_SERVER         	"{E6FF8A}"
-#define CHAT_VALUE       	   	"{A3E4FF}"
-#define CHAT_BROWN      	    "{804000}"
+#define CHAT_WHITE 		"{FFFFFF}"
+#define CHAT_GREY 		"{AFAFAF}"
+#define CHAT_RED 		"{FF0000}"
+#define CHAT_YELLOW 	"{FFFF00}"
+#define CHAT_LIGHTBLUE 	"{33CCFF}"
+#define CHAT_BLACK      "{0E0101}"
+#define CHAT_GREEN	   	"{6EF83C}"
+#define CHAT_ORANGE     "{FFAF00}"
+#define CHAT_LIME       "{B7FF00}"
+#define CHAT_CYAN       "{00FFEE}"
+#define CHAT_PARAM   	"{3FCD02}"
+#define CHAT_SERVER     "{E6FF8A}"
+#define CHAT_VALUE    	"{A3E4FF}"
+#define CHAT_BROWN   	"{804000}"
 
-#define ModelUnknown        18631
-#define ModelDeerSkin 		2386
-#define ModelBandage 		1575
-#define ModelMedkit 		1580
-#define ModelPizza 			1582
-#define ModelBurger 		2703
-#define ModelSoda 			2601
-#define ModelWater 			1950
-#define ModelEWater 		1951
-#define ModelHammer 		18635
-#define ModelGate1 			2930
-#define ModelGate2 			3050
-#define ModelWall 			19356
-#define ModelWalldoor 		19386
-#define ModelBag5 			363
-#define ModelBag10 			3026
-#define ModelBag20 			371
-#define ModelBag30 			2663
-#define ModelBag40 			2060
-#define ModelBag50 			1310
-#define ModelToolbox		2694
-#define ModelBox 			1271
-#define ModelRope           19087
-#define ModelRake           18890
-#define ModelBed 			1647//14866 //2384
-#define ModelEngine 		920
-#define ModelMeatBag        2803
-#define ModelMeatUC 		2806
-#define ModelMeatC 			2804
-#define ModelFishUC 		1600
-#define ModelFishC 			1599
-#define ModelFishRob 		18632
-#define ModelIron 			905
-#define ModelCU 			2936
-#define ModelGolf 			333
-#define ModelNight 			334
-#define ModelKnife 			335
-#define ModelBaseball 		336
-#define ModelShovel 		337
-#define ModelPool 			338
-#define ModelKatana 		339
-#define ModelChainsaw 		341
-#define ModelPurple 		321
-#define ModelDildo 			322
-#define ModelVibrator 		323
-#define ModelSilver 		324
-#define ModelFlowers 		325
-#define ModelCane 			326
-#define ModelGrenade 		342
-#define ModelTearGas 		343
-#define ModelMolotov 		344
-#define Model9mm 			346
-#define ModelSilenced 		347
-#define ModelDeagle 		348
-#define ModelShotgun 		349
-#define ModelSawnoff 		350
-#define ModelCombat 		351
-#define ModelUzi 			352
-#define ModelMp5 			353
-#define ModelAK47 			355
-#define ModelM4 			356
-#define ModelTec9 			372
-#define ModelRifle 			357
-#define ModelSniper 		358
-#define ModelSpraycan 		365
-#define ModelFire 			366
-#define ModelArmour         1242
-#define ModelCamera 		367
+#define ModelUnknown    18631
+#define ModelDeerSkin 	2386
+#define ModelBandage 	1575
+#define ModelMedkit 	1580
+#define ModelPizza 		1582
+#define ModelBurger 	2703
+#define ModelSoda 		2601
+#define ModelWater 		1950
+#define ModelEWater 	1951
+#define ModelHammer 	18635
+#define ModelGate1 		2930
+#define ModelGate2 		3050
+#define ModelWall 		19356
+#define ModelWalldoor 	19386
+#define ModelBag5 		363
+#define ModelBag10 		3026
+#define ModelBag20 		371
+#define ModelBag30 		2663
+#define ModelBag40 		2060
+#define ModelBag50 		1310
+#define ModelToolbox	2694
+#define ModelBox 		1271
+#define ModelRope       19087
+#define ModelRake       18890
+#define ModelBed 		1647//14866 //2384
+#define ModelEngine 	920
+#define ModelMeatBag    2803
+#define ModelMeatUC 	2806
+#define ModelMeatC 		2804
+#define ModelFishUC 	1600
+#define ModelFishC 		1599
+#define ModelFishRob 	18632
+#define ModelIron 		905
+#define ModelCU 		2936
+#define ModelGolf 		333
+#define ModelNight 		334
+#define ModelKnife 		335
+#define ModelBaseball 	336
+#define ModelShovel 	337
+#define ModelPool 		338
+#define ModelKatana 	339
+#define ModelChainsaw 	341
+#define ModelPurple 	321
+#define ModelDildo 		322
+#define ModelVibrator 	323
+#define ModelSilver 	324
+#define ModelFlowers 	325
+#define ModelCane 		326
+#define ModelGrenade 	342
+#define ModelTearGas 	343
+#define ModelMolotov 	344
+#define Model9mm 		346
+#define ModelSilenced 	347
+#define ModelDeagle 	348
+#define ModelShotgun 	349
+#define ModelSawnoff 	350
+#define ModelCombat 	351
+#define ModelUzi 		352
+#define ModelMp5 		353
+#define ModelAK47 		355
+#define ModelM4 		356
+#define ModelTec9 		372
+#define ModelRifle 		357
+#define ModelSniper 	358
+#define ModelSpraycan 	365
+#define ModelFire 		366
+#define ModelArmour     1242
+#define ModelCamera 	367
 
 //Ammo
-#define ModelAColt 			2037
-#define ModelAShotgun 		2039
-#define ModelASMS 			2038
-#define ModelAAus 			2040
-#define ModelARifle 		2969
+#define ModelAColt 		2037
+#define ModelAShotgun 	2039
+#define ModelASMS 		2038
+#define ModelAAus 		2040
+#define ModelARifle 	2969
 
 //gas
-#define ModelGascan 		1650
-#define ModelEGascan 		2057
+#define ModelGascan 	1650
+#define ModelEGascan 	2057
 
 //GPS
-#define ModelGpsMap 		19513
-#define ModelWood 			1463
+#define ModelGpsMap 	19513
+#define ModelWood 		1463
 
 #define pLoop() 		for(new i = 0, j = GetMaxPlayers(); i < j; i++) if(IsPlayerConnected(i))
 #define Loop(%0)    	for(new i = 0; i < %0; i++)
 #define LoopEx(%0,%1)   for(new i = %0, j = %1; i < j; i++)
 #define PRESSED(%0) 	(((newkeys & (%0)) == (%0)) && ((oldkeys & (%0)) != (%0)))
 
-#define GNAME 		"TLOD 1.0"
-#define MNAME 		"|-[LandDeath]-|"
-#define HNAME 		"The Land Of Death"
+#define GNAME 			"TLOD 1.0"
+#define MNAME 			"|-[LandDeath]-|"
+#define HNAME 			"The Land Of Death"
 
 #define MAX_ZOMBIES     100
 #define MAX_PLAYERS     30
@@ -145,7 +150,7 @@
 #define MAX_TREES		450
 #define MAX_BOXES       100
 
-#define SQL_PASSWORD    ""
+#define SQL_PASSWORD    "YVsRzeN83WMmJU8t"
 #define SQL_USER        "TLOD"
 #define SQL_DB          "TLOD"
 #define SQL_SERVER      "127.0.0.1"
@@ -195,7 +200,10 @@ enum e_player
 	PlayerBar:ThirstBar,
 	PlayerBar:ExpBar,
 	bool:Logged,
-	bool:Died
+	bool:Died,
+
+	Kills[2], //[0] = player/human kills, [1] = zombie kills
+	Count[3]
 };
 
 new Player[MAX_PLAYERS][e_player],PlayerText:FuelText;
@@ -767,6 +775,8 @@ public OnPlayerDisconnect(playerid, reason)
 		mysql_format(g_SQL, b_string, sizeof(b_string), "UPDATE user_data SET Level = %d, Pos_X = %0.2f, Pos_Y = %0.2f, Pos_Z = %0.2f, Last_IP = '%s' WHERE Name = '%e'",Player[playerid][Level], Player[playerid][SpawnPos][0], Player[playerid][SpawnPos][1], Player[playerid][SpawnPos][2], Player[playerid][IP], Player[playerid][Name]);
 		mysql_tquery(g_SQL, b_string);
 
+		mysql_format(g_SQL, b_string, sizeof(b_string), "UPDATE user_data SET zKills = %d, hKills = %d WHERE Name = '%e'",Player[playerid][Kills][1],Player[playerid][Kills][0],Player[playerid][Name]);
+
         SavePlayerInventory(playerid);
 	}
 
@@ -808,6 +818,7 @@ public OnPlayerDeath(playerid, killerid, reason)
 	if(killerid != INVALID_PLAYER_ID && !IsPlayerNPC(killerid))
 	{
 		GivePlayerExperience(killerid,4);
+		Player[killerid][Kills][0]++;
 	}
 	else if(IsPlayerNPC(killerid))
 	{
@@ -1334,14 +1345,14 @@ CMD:help(playerid, params[])
 	new help[256*2];
 	strcat(help, CHAT_SERVER"Welcome to The Land Of Death.\n\n"CHAT_PARAM"Server Commands:\n"CHAT_VALUE"All available commands are listed in /cmds\n\n");
 	strcat(help, CHAT_PARAM"Progress bars:\n"CHAT_VALUE"There are currently (and always) 4 progressbars displayed on your screen.\n");
-	strcat(help, "- "CHAT_LIGHTBLUE"Blue: "CHAT_VALUE"Thirst\n- "CHAT_WHITE"White: "CHAT_VALUE"Sleep\n- "CHAT_YELLOW"Yellow: "CHAT_VALUE"Hunger\n\n");
+	strcat(help, "- "CHAT_LIGHTBLUE"Blue: "CHAT_VALUE"Thirst\n- "CHAT_WHITE"White: "CHAT_VALUE"Sleep\n- "CHAT_YELLOW"Yellow: "CHAT_VALUE"Hunger\n- "CHAT_ORANGE"Orange: Experience/level\n\n");
 	ShowPlayerDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_MSGBOX, "Server help", help, "OK", "");
 	return 1;
 }
 
 CMD:viewbox(playerid,params[])
 {
-	new view[256*2];
+	new view[256*2],bool:found = false;
 	Loop(MAX_BOXES)
 	{
 		if(IsPlayerInRangeOfPoint(playerid,2,Boxes[i][SpawnPos][0],Boxes[i][SpawnPos][1],Boxes[i][SpawnPos][2]))
@@ -1351,16 +1362,17 @@ CMD:viewbox(playerid,params[])
 				if(Boxes[i][b_Items][z] == -1) continue;
 				format(s_string, sizeof(s_string), "[Slot: %d] %s (%d)\n", z, GetItemName(Boxes[i][b_Items][z]),Boxes[i][b_Items][z]);
 				strcat(view, s_string);
+				found = true;
 			}
 		}
 	}
-	ShowPlayerDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_MSGBOX, "Box items:", view, "OK", "");
-	return 1;
+	if(!found) return SendClientMessage(playerid, COLOR_RED, "You're not near a box.");
+	else return ShowPlayerDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_MSGBOX, "Box items:", view, "OK", "");
 }
 
 CMD:getboxitem(playerid,params[])
 {
-	new slot;
+	new slot,bool:found = false;
 	if(IsInventoryFull(playerid)) return SendClientMessage(playerid, COLOR_RED, "Your inventory is full.");
 	if(sscanf(params, "d", slot)) return SendClientMessage(playerid, COLOR_RED, "Usage: /getboxitem [slot]");
 	Loop(MAX_BOXES)
@@ -1372,9 +1384,11 @@ CMD:getboxitem(playerid,params[])
 			format(m_string,sizeof(m_string),"You've picked item %s (%d) from the box.",GetItemName(Boxes[i][b_Items][slot]),Boxes[i][b_Items][slot]);
 			SendClientMessage(playerid, COLOR_GREEN, m_string);
 			Boxes[i][b_Items][slot] = -1;
+			found = true;
 			break;
 		}
 	}
+	if(!found) return SendClientMessage(playerid, COLOR_RED, "You're not near a box");
 	return 1;
 }
 
@@ -1414,7 +1428,11 @@ CMD:fish(playerid,params[])
 
 CMD:cmds(playerid,params[])
 {
-	SendClientMessage(playerid, COLOR_RED, "AZERTYUIOP");
+	new cmds[256*2];
+	strcat(cmds,CHAT_SERVER"Available commands:\n\n"CHAT_PARAM"General: "CHAT_VALUE"/help /gps /fish /stats /sleep\n\n");
+	strcat(cmds,CHAT_PARAM"Crafing: "CHAT_VALUE"/craft\n\n"CHAT_PARAM"Vehicle: "CHAT_VALUE"/engine /lights\n\n");
+	if(Player[playerid][Adminlevel] > 0) strcat(cmds, CHAT_PARAM"Admin: "CHAT_VALUE"All admin commands are listed in /acmds"); 
+	ShowPlayerDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_MSGBOX, "Server Commands", cmds, "OK","");
 	return 1;
 }
 
@@ -1433,16 +1451,32 @@ CMD:pos(playerid,params[])
 	return 1;
 }
 
-
 CMD:stats(playerid,params[])
 {
-	new stats[256];
-	format(m_string, sizeof(m_string),CHAT_SERVER"Your stats: (%s - %d)\n\n", Player[playerid][Name], playerid);
-	strcat(stats,m_string);
-	format(m_string,sizeof(m_string),CHAT_PARAM"Hunger: "CHAT_VALUE"%0.2f\n"CHAT_PARAM"Thirst: "CHAT_VALUE"%0.2f\n"CHAT_PARAM"Inventory: "CHAT_VALUE"%d slots used of %d\n",Player[playerid][Hunger],Player[playerid][Thirst],CountInventoryItems(playerid),Player[playerid][InvSize]);
-	strcat(stats,m_string);
-	format(m_string,sizeof(m_string),CHAT_PARAM"Sleep: "CHAT_VALUE"%0.2f\n\n"CHAT_PARAM"Experience: "CHAT_VALUE"%0.2f/%0.2f\n"CHAT_PARAM"Level: "CHAT_VALUE"%0.2f",Player[playerid][Sleep],Player[playerid][Experience],GetPlayerProgressBarMaxValue(playerid,Player[playerid][ExpBar]),Player[playerid][Level]);
-	strcat(stats,m_string);
+	new stats[256*2],id;
+	if(sscanf(params,"d",id)) 
+	{
+		format(m_string, sizeof(m_string),CHAT_SERVER"Your stats: (%s - %d)\n\n", Player[playerid][Name], playerid);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Hunger: "CHAT_VALUE"%0.2f\n"CHAT_PARAM"Thirst: "CHAT_VALUE"%0.2f\n"CHAT_PARAM"Inventory: "CHAT_VALUE"%d slots used of %d\n",Player[playerid][Hunger],Player[playerid][Thirst],CountInventoryItems(playerid),Player[playerid][InvSize]);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Sleep: "CHAT_VALUE"%0.2f\n\n"CHAT_PARAM"Experience: "CHAT_VALUE"%0.2f/%0.2f\n"CHAT_PARAM"Level: "CHAT_VALUE"%0.2f\n\n",Player[playerid][Sleep],Player[playerid][Experience],GetPlayerProgressBarMaxValue(playerid,Player[playerid][ExpBar]),Player[playerid][Level]);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Zombie kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Human kills: "CHAT_VALUE"%d",Player[playerid][Kills][1],Player[playerid][Kills][0]);
+		strcat(stats,m_string);
+	}
+	else
+	{
+		if(!IsPlayerConnected(id)) return SendClientMessage(playerid, COLOR_RED, "This player isn't connected.");
+		format(m_string, sizeof(m_string),CHAT_SERVER"Your stats: (%s - %d)\n\n", Player[id][Name], id);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Hunger: "CHAT_VALUE"%0.2f\n"CHAT_PARAM"Thirst: "CHAT_VALUE"%0.2f\n"CHAT_PARAM"Inventory: "CHAT_VALUE"%d slots used of %d\n",Player[id][Hunger],Player[id][Thirst],CountInventoryItems(id),Player[id][InvSize]);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Sleep: "CHAT_VALUE"%0.2f\n\n"CHAT_PARAM"Experience: "CHAT_VALUE"%0.2f/%0.2f\n"CHAT_PARAM"Level: "CHAT_VALUE"%0.2f\n\n",Player[id][Sleep],Player[id][Experience],GetPlayerProgressBarMaxValue(id,Player[id][ExpBar]),Player[id][Level]);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Zombie kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Human kills: "CHAT_VALUE"%d",Player[id][Kills][1],Player[id][Kills][0]);
+		strcat(stats,m_string);
+	}
 	ShowPlayerDialog(playerid,DIALOG_UNUSED,DIALOG_STYLE_MSGBOX,"Statistics",stats,"OK","");
 	return 1;
 }
@@ -1511,6 +1545,34 @@ CMD:sleep(playerid,params[])
 	return 1;
 }
 // =============================== ADMIN COMMANDS ==============================
+CMD:acmds(playerid,params[])
+{
+	if(Player[playerid][Adminlevel] == 0) return 0;
+	new cmds[256*2];
+	strcat(cmds, CHAT_SERVER"Available admin commands\n\n");
+	strcat(cmds, CHAT_PARAM"Level 1:\n"CHAT_VALUE"/regrowtrees\n\n");
+	strcat(cmds, CHAT_PARAM"Level 2:\n"CHAT_VALUE"No commands yet.\n\n");
+	strcat(cmds, CHAT_PARAM"Level 3:\n"CHAT_VALUE"/giveitem\n\n");
+	strcat(cmds, CHAT_PARAM"Level 4:\n"CHAT_VALUE"No commands yet\n\n");
+	strcat(cmds, CHAT_PARAM"Level 5:\n"CHAT_VALUE"/gotodeer /createcar /createtree\n\n");
+
+	ShowPlayerDialog(playerid, DIALOG_UNUSED, DIALOG_STYLE_MSGBOX, "Admin commands", cmds, "OK","");
+	return 1;
+}
+
+//Level 1
+CMD:regrowtrees(playerid,params[])
+{
+    if(Player[playerid][Adminlevel] == 0) return 0;
+    Loop(MAX_TREES)
+    {
+        if(Trees[i][TreeObject] == INVALID_OBJECT_ID || Trees[i][Health] != 0) continue;
+    	RegrowTree(i);
+  	}
+	return 1;
+}
+
+//level 3
 CMD:giveitem(playerid,params[])
 {
     if(Player[playerid][Adminlevel] < 3) return 0;
@@ -1522,9 +1584,10 @@ CMD:giveitem(playerid,params[])
 	return 1;
 }
 
+//level 5
 CMD:gotodeer(playerid,params[])
 {
-	if(Player[playerid][Adminlevel] != 5) return SendClientMessage(playerid,COLOR_RED,"You're not admin !");
+	if(Player[playerid][Adminlevel] != 5) return 0;
 	new id,Float:pos[3];
 	if(sscanf(params,"d",id)) return SendClientMessage(playerid,COLOR_RED,"/gotodeer [deerid]");
 	GetObjectPos(Deers[id],pos[0],pos[1],pos[2]);
@@ -1534,7 +1597,7 @@ CMD:gotodeer(playerid,params[])
 
 CMD:createcar(playerid,params[])
 {
-	if(Player[playerid][Adminlevel] != 5) return SendClientMessage(playerid,COLOR_RED,"You're not admin !");
+	if(Player[playerid][Adminlevel] != 5) return 0;
 	if(Server_Data[cVehicles] >= MAX_VEHICLES) return SendClientMessage(playerid,COLOR_RED,"Too much vehicles");
 	if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid,COLOR_RED,"You're not in a vehicle !");
 	new Float:pos[4], veh = GetPlayerVehicleID(playerid);
@@ -1550,7 +1613,7 @@ CMD:createcar(playerid,params[])
 
 CMD:createtree(playerid,params[])
 {
-	if(Player[playerid][Adminlevel] != 5) return SendClientMessage(playerid,COLOR_RED,"You're not admin !");
+	if(Player[playerid][Adminlevel] != 5) return 0;
 	if(Server_Data[cTrees] >= MAX_TREES) return SendClientMessage(playerid,COLOR_RED,"Too much trees");
 	new type, Float:pos[3], randobj;
 	if(sscanf(params,"i",type)) return SendClientMessage(playerid,COLOR_RED,"/createtree [type]");
@@ -1593,16 +1656,7 @@ CMD:createtree(playerid,params[])
 	return 1;
 }
 
-CMD:regrowtrees(playerid,params[])
-{
-    if(Player[playerid][Adminlevel] == 0) return SendClientMessage(playerid,COLOR_RED,"You're not admin !");
-    Loop(MAX_TREES)
-    {
-        if(Trees[i][TreeObject] == INVALID_OBJECT_ID || Trees[i][Health] != 0) continue;
-    	RegrowTree(i);
-  	}
-	return 1;
-}
+
 // =============================================================================
 stock HasPlayerWeapon(playerid, weaponid)
 {
@@ -2113,6 +2167,8 @@ public OnPlayerLogin(playerid)
         Player[playerid][Sleep] = cache_get_field_content_float(0,"Sleep",g_SQL);
         Player[playerid][Experience] = cache_get_field_content_float(0, "Exp", g_SQL);
         Player[playerid][Level] = cache_get_field_content_int(0, "Level", g_SQL);
+        Player[playerid][Kills][0] = cache_get_field_content_int(0, "hKills", g_SQL);
+        Player[playerid][Kills][1] = cache_get_field_content_int(0, "zKills", g_SQL);
 		
         SetPlayerProgressBarMaxValue(playerid, Player[playerid][ExpBar], 10 + (Player[playerid][Level] * 10));
 
@@ -2274,6 +2330,7 @@ public FCNPC_OnDeath(npcid, killerid, weaponid)
 	SendClientMessageToAll(COLOR_RED,m_string);
 	GivePlayerScore(killerid,1);
 	GivePlayerExperience(killerid,2);
+	Player[killerid][Kills][1]++;
 	if(random(100) < 35) 
 	{
 		new Float:pos[3];
