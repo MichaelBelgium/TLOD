@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Mar 08, 2015 at 06:12 PM
+-- Generation Time: Mar 15, 2015 at 06:00 PM
 -- Server version: 5.0.95
 -- PHP Version: 5.3.3
 
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `inv_data` (
   `ItemAmount` int(11) NOT NULL,
   PRIMARY KEY  (`iID`),
   KEY `Name` (`Name`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=405 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=447 ;
 
 -- --------------------------------------------------------
 
@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS `user_data` (
   `Sleep` float NOT NULL default '100',
   `Exp` float NOT NULL default '0',
   `Level` smallint(6) NOT NULL default '0',
+  `hKills` int(11) NOT NULL default '0',
+  `zKills` int(11) NOT NULL default '0',
   `InvSize` int(11) NOT NULL default '5',
   `Pos_X` float NOT NULL default '0',
   `Pos_Y` float NOT NULL default '0',
