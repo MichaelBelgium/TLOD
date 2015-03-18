@@ -2,6 +2,10 @@
 Current updates:
  * Edited some commands
  * Added /cmds and /acmds
+ * zombie kills and human kills gets saved
+
+ * Added more stats: deers killed, items picked
+ * Forgot to do a query on disconnecting
 */
 
 #include <a_samp>
@@ -202,8 +206,8 @@ enum e_player
 	bool:Logged,
 	bool:Died,
 
-	Kills[2], //[0] = player/human kills, [1] = zombie kills
-	Count[3]
+	Kills[3], //[0] = player/human kills, [1] = zombie kills, [2] = deers killed
+	Count[3] //[0] = items picked up, [1] = items crafted, [2] = trees chopped
 };
 
 new Player[MAX_PLAYERS][e_player],PlayerText:FuelText;
@@ -727,6 +731,8 @@ public OnPlayerConnect(playerid)
 	Player[playerid][Sleep] = 100.0;
 	Player[playerid][Experience] = 0.0;
 	Player[playerid][Level] = 0;
+	Loop(3) Player[playerid][Kills][i] = 0;
+	Loop(3) Player[playerid][Count][i] = 0;
 	
 	Player[playerid][SleepBar] = CreatePlayerProgressBar(playerid, 548.000000, 56.000000, 62.000000, 5.000000, COLOR_WHITE, 100.000000, BAR_DIRECTION_RIGHT);
 	Player[playerid][HungerBar] = CreatePlayerProgressBar(playerid, 548.000000, 42.000000, 62.000000, 5.000000, COLOR_YELLOW, 100.000000, BAR_DIRECTION_RIGHT);
@@ -775,7 +781,8 @@ public OnPlayerDisconnect(playerid, reason)
 		mysql_format(g_SQL, b_string, sizeof(b_string), "UPDATE user_data SET Level = %d, Pos_X = %0.2f, Pos_Y = %0.2f, Pos_Z = %0.2f, Last_IP = '%s' WHERE Name = '%e'",Player[playerid][Level], Player[playerid][SpawnPos][0], Player[playerid][SpawnPos][1], Player[playerid][SpawnPos][2], Player[playerid][IP], Player[playerid][Name]);
 		mysql_tquery(g_SQL, b_string);
 
-		mysql_format(g_SQL, b_string, sizeof(b_string), "UPDATE user_data SET zKills = %d, hKills = %d WHERE Name = '%e'",Player[playerid][Kills][1],Player[playerid][Kills][0],Player[playerid][Name]);
+		mysql_format(g_SQL, b_string, sizeof(b_string), "UPDATE user_data SET zKills = %d, hKills = %d, dKills = %d, cItems = %d, cCraft = %d, cTrees = %d WHERE Name = '%e'",Player[playerid][Kills][1],Player[playerid][Kills][0],Player[playerid][Kills][2],Player[playerid][Count][0],Player[playerid][Count][1],Player[playerid][Count][2],Player[playerid][Name]);
+		mysql_tquery(g_SQL, b_string);
 
         SavePlayerInventory(playerid);
 	}
@@ -995,6 +1002,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 				MapAndreas_FindZ_For2DCoord(pos[0],pos[1],pos[2]);
 				CreateItem(ModelMeatUC,1,pos[0],pos[1],pos[2],0,0,0);
 				CreateItem(ModelDeerSkin,1,pos[0]+1,pos[1],pos[2],0,0,0);
+				Player[playerid][Kills][2]++;
 				SetTimerEx("RespawnDeer",100,0,"i",i);
 				break;
 			}
@@ -1020,6 +1028,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 					Trees[i][TreeObject] = CreateObject(832, Trees[i][SpawnPos][0], Trees[i][SpawnPos][1], Trees[i][SpawnPos][2], 0.0, 0.0, 0.0);
 
 					GivePlayerExperience(playerid,1);
+					Player[playerid][Count][2]++;
 					CreateItem(ModelWood,2,pos[0]+2,pos[1]+2,pos[2],0,0,0);
 					printf("Tree %d has been replaced with a stump.", i);
 				}
@@ -1040,6 +1049,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 			    DestroyObject(Items[i][ItemObject]);
 			    Delete3DTextLabel(Items[i][ItemText]);
 				Items[i][ItemObject] = INVALID_OBJECT_ID;
+				Player[playerid][Count][0]++;
 				break;
 			}
 		}
@@ -1286,6 +1296,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 				ApplyAnimation(playerid, "BOMBER", "BOM_Plant_Loop", 4.1, false, 1, 1, 0, 4000, 1);
 				GivePlayerExperience(playerid,1);
+				Player[playerid][Count][1]++;
 			}
 		}
 
@@ -1462,7 +1473,9 @@ CMD:stats(playerid,params[])
 		strcat(stats,m_string);
 		format(m_string,sizeof(m_string),CHAT_PARAM"Sleep: "CHAT_VALUE"%0.2f\n\n"CHAT_PARAM"Experience: "CHAT_VALUE"%0.2f/%0.2f\n"CHAT_PARAM"Level: "CHAT_VALUE"%0.2f\n\n",Player[playerid][Sleep],Player[playerid][Experience],GetPlayerProgressBarMaxValue(playerid,Player[playerid][ExpBar]),Player[playerid][Level]);
 		strcat(stats,m_string);
-		format(m_string,sizeof(m_string),CHAT_PARAM"Zombie kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Human kills: "CHAT_VALUE"%d",Player[playerid][Kills][1],Player[playerid][Kills][0]);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Zombie kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Human kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Deer kills: "CHAT_VALUE"%d\n\n",Player[playerid][Kills][1],Player[playerid][Kills][0],Player[playerid][Kills][2]);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Items picked up: "CHAT_VALUE"%d\n"CHAT_PARAM"Items crafted: "CHAT_VALUE"%d\n"CHAT_PARAM"Trees chopped: "CHAT_VALUE"%d",Player[playerid][Count][0],Player[playerid][Count][1],Player[playerid][Count][2]);
 		strcat(stats,m_string);
 	}
 	else
@@ -1474,7 +1487,9 @@ CMD:stats(playerid,params[])
 		strcat(stats,m_string);
 		format(m_string,sizeof(m_string),CHAT_PARAM"Sleep: "CHAT_VALUE"%0.2f\n\n"CHAT_PARAM"Experience: "CHAT_VALUE"%0.2f/%0.2f\n"CHAT_PARAM"Level: "CHAT_VALUE"%0.2f\n\n",Player[id][Sleep],Player[id][Experience],GetPlayerProgressBarMaxValue(id,Player[id][ExpBar]),Player[id][Level]);
 		strcat(stats,m_string);
-		format(m_string,sizeof(m_string),CHAT_PARAM"Zombie kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Human kills: "CHAT_VALUE"%d",Player[id][Kills][1],Player[id][Kills][0]);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Zombie kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Human kills: "CHAT_VALUE"%d\n"CHAT_PARAM"Deer kills: "CHAT_VALUE"%d\n\n",Player[id][Kills][1],Player[id][Kills][0],Player[id][Kills][2]);
+		strcat(stats,m_string);
+		format(m_string,sizeof(m_string),CHAT_PARAM"Items picked up: "CHAT_VALUE"%d\n"CHAT_PARAM"Items crafted: "CHAT_VALUE"%d\n"CHAT_PARAM"Trees chopped: "CHAT_VALUE"%d",Player[id][Count][0],Player[id][Count][1],Player[id][Count][2]);
 		strcat(stats,m_string);
 	}
 	ShowPlayerDialog(playerid,DIALOG_UNUSED,DIALOG_STYLE_MSGBOX,"Statistics",stats,"OK","");
@@ -2169,6 +2184,10 @@ public OnPlayerLogin(playerid)
         Player[playerid][Level] = cache_get_field_content_int(0, "Level", g_SQL);
         Player[playerid][Kills][0] = cache_get_field_content_int(0, "hKills", g_SQL);
         Player[playerid][Kills][1] = cache_get_field_content_int(0, "zKills", g_SQL);
+        Player[playerid][Kills][2] = cache_get_field_content_int(0, "dKills", g_SQL);
+        Player[playerid][Count][0] = cache_get_field_content_int(0, "cItems", g_SQL);
+        Player[playerid][Count][1] = cache_get_field_content_int(0, "cCraft", g_SQL);
+        Player[playerid][Count][2] = cache_get_field_content_int(0, "cTrees", g_SQL);
 		
         SetPlayerProgressBarMaxValue(playerid, Player[playerid][ExpBar], 10 + (Player[playerid][Level] * 10));
 
