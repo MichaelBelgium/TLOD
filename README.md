@@ -6,7 +6,7 @@ The Land Of Death - A SA:MP Zombie gamemode (rescript)
 I never got in touch of a zombie gamemode but i grabbed one from the San Andreas Multiplayer Forums and made an own zombie script based of the script from the forums. Now it's an open source zombie gamemode with several features. Upcoming edits are planned and ofcourse more stuff.
 
 <h2>Features</h2>
-* SQL Register/login (or Y_INI)
+* SQL Register/login
 * Inventory system
 * Loot system
 * Needs system (hunger, sleep, thirst)
@@ -28,7 +28,6 @@ Plugins:
 Includes:
 * <a href="https://github.com/Southclaw/progress2">Progress2</a> (for the needs system)
 * <a href="http://forum.sa-mp.com/showthread.php?t=91354">ZCMD</a> (command processor)
-* <a href="http://forum.sa-mp.com/showthread.php?t=175565">Y_INI</a> (saving)
 
 <h2>Settings</h2>
 Basic defines/settings:
@@ -54,9 +53,6 @@ Basic defines/settings:
 #define SQL_USER        "TLOD"
 #define SQL_DB          "TLOD"
 #define SQL_SERVER      "127.0.0.1"
-
-//if you use Y_INI:
-#define FILE_USER		    "/Accounts/%s.ini"
 ```
 
 <h2>Custom functions</h2>
@@ -77,36 +73,29 @@ stock MoveItemsInInventory(playerid,startslot);
 stock AddItemToInventory(playerid,modelid,amount = 1);
 stock IsItemInInventory(playerid,modelid,amount = 1);
 stock GetItemInInventory(playerid,modelid);
-stock SavePlayerInventory(playerid); // only SQL
+stock SavePlayerInventory(playerid);
 
-public OnPlayerInventoryLoad(playerid) //only SQL
+public OnPlayerInventoryLoad(playerid)
 ```
 
 <h2>Credits</h2>
 * <a href="http://forum.sa-mp.com/showthread.php?t=528864">VinPure</a>, without him i couldn't <a href="http://forum.sa-mp.com/showthread.php?t=528864">get started</a>
-* Y_Less, Sscanf & Y_INI
+* Y_Less, Sscanf
 * BlueG/maddinat0r, MySQL plugin
 * Kalcor, MapAndreas
 * SouthClaw, progress2
 * Me, re-scripting from scratch
 
-<h2>Compile time</h2>
-If you can choose to wether take SQL or Y_INI check this:
-* Compile time with Y_INI: 12.2 seconds
-* Compile time with SQL: 2.2 seconds
-
-That's why I work with SQL in the first place. 
-
 <h2>Media</h2>
 
-The area where items get randomly created
-<img src="http://pat.exp-gaming.net/TLOD/TLOD.png" />
+Deers:
+<img src="http://puu.sh/kX0hr.jpg" />
 
-Inventory:
-<img src="http://pat.exp-gaming.net/TLOD/TLOD1.png" />
+Zombies
+<img src="http://puu.sh/kWZxw.jpg" />
 
-Progress bars for hunger, thirst, sleep and experience/level:
-<img src="http://pat.exp-gaming.net/TLOD/TLOD2.png" />
+An item
+<img src="http://puu.sh/kVHhU.png" />
 
-Some dropped items:
-<img src="http://pat.exp-gaming.net/TLOD/TLOD3.png" />
+Trees
+<img src="http://puu.sh/kVHmK.png" />
