@@ -1,6 +1,9 @@
 /*
 Current updates:
- * Zombies now (re)spawn randomly in the area
+ * Backpack sizes are now based on item count and not slot count
+ * Removed useless textdraw
+ * Possible to drop multiple items that are stacked in your backpack
+ * Edited /addboxitem
 */
 
 #include <a_samp>
@@ -162,6 +165,7 @@ enum
     DIALOG_CRAFT,
     DIALOG_INVENTORY,
     DIALOG_INVENTORY2,
+    DIALOG_INVENTORY3,
     DIALOG_REGISTER,
     DIALOG_LOGIN,
     DIALOG_GPS
@@ -201,7 +205,7 @@ enum e_player
 	PlayerBar:ExpBar,
 	bool:Logged,
 	bool:Died,
-
+	tmpSlot,
 	Kills[3], //[0] = player/human kills, [1] = zombie kills, [2] = deers killed
 	Count[3] //[0] = items picked up, [1] = items crafted, [2] = trees chopped
 };
@@ -259,9 +263,6 @@ enum e_server
 	iStuff[8]
 };
 new Server_Data[e_server];
-
-new Text:TextFull;
-
 new Float:RandomSpawns[][] =
 {
 	{-89.0351,-1564.9932,3.0043,105.2555},
@@ -361,19 +362,6 @@ public OnGameModeInit()
 	Create3DTextLabel("Fish Point\n/fish", 0x008080FF,-1207.7113,-2602.2327,1.0976, 40.0, 0, 1);
 	Create3DTextLabel("Fish Point\n/fish", 0x008080FF,-1178.8430,-2632.9854,11.7578, 40.0, 0, 1);
 
-	TextFull = TextDrawCreate(266.000000, 433.000000, "Backpack Full");
-	TextDrawBackgroundColor(TextFull, 255);
-	TextDrawFont(TextFull, 2);
-	TextDrawLetterSize(TextFull, 0.290000, 0.899999);
-	TextDrawColor(TextFull, -1);
-	TextDrawSetOutline(TextFull, 0);
-	TextDrawSetProportional(TextFull, 1);
-	TextDrawSetShadow(TextFull, 1);
-	TextDrawUseBox(TextFull, 1);
-	TextDrawBoxColor(TextFull, 255);
-	TextDrawTextSize(TextFull, 360.000000, 20.000000);
-	TextDrawSetSelectable(TextFull, 0);
-	
 	CreateObject(13025, -569.18439, -1025.00049, 26.06928,   0.00000, 0.00000, 146.15991);
 	CreateObject(13025, -80.48787, -1187.38989, 3.11425,   0.00000, 0.00000, -21.71999);
 	CreateObject(13025, 30.16006, -2660.07666, 41.81733,   0.00000, 0.00000, 3.90000);
@@ -508,7 +496,6 @@ public OnGameModeInit()
 
 public OnGameModeExit()
 {
-	TextDrawDestroy(TextFull);
 	return 1;
 }
 
@@ -852,7 +839,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	
     if(PRESSED(KEY_CROUCH))
     {
-        if(IsInventoryFull(playerid)) return TextDrawShowForPlayer(playerid,TextFull);
+        if(IsInventoryFull(playerid)) return SendClientMessage(playerid, COLOR_RED, "Your backpack is currently full.");
    		Loop(sizeof(Items))
 		{
 			if(Items[i][ItemObject] == INVALID_OBJECT_ID) continue;
@@ -912,7 +899,13 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(response)
 			{
 			    if(PlayerInv[playerid][listitem][Item] == -1) return 0;
-			    DropItemFromInventory(playerid,listitem);
+			    if(PlayerInv[playerid][listitem][Amount] > 1)
+			    {
+			    	Player[playerid][tmpSlot] = listitem;
+			    	ShowPlayerDialog(playerid, DIALOG_INVENTORY3, DIALOG_STYLE_INPUT, "Drop items", "This item is stacked. How many items do you wanna drop?", "Drop", "Cancel");
+			    }
+			    else
+			    	DropItemFromInventory(playerid,listitem);
 			}
 		}
 
@@ -1021,6 +1014,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				if(PlayerInv[playerid][listitem][Amount] > 1) PlayerInv[playerid][listitem][Amount]--;
 				else MoveItemsInInventory(playerid,listitem);
 			}
+		}
+
+		case DIALOG_INVENTORY3:
+		{
+			if(!response) 
+			{
+				Player[playerid][tmpSlot] = 0;
+				return 0;
+			}
+			if(!IsNumeric(inputtext)) return SendClientMessage(playerid, COLOR_RED, "Please enter a number");
+			DropItemFromInventory(playerid, Player[playerid][tmpSlot], strval(inputtext));
 		}
 		
 		case DIALOG_LOGIN:
@@ -1219,16 +1223,15 @@ CMD:getboxitem(playerid,params[])
 CMD:addboxitem(playerid,params[])
 {
 	new slot, item, bool:found = false;
-	if(sscanf(params, "dd", slot, item)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot] [item]");
-	if(slot < 0 || slot > 9) return SendClientMessage(playerid, COLOR_RED, "Invalid slot");
-	if(!IsItemInInventory(playerid,item)) return SendClientMessage(playerid, COLOR_RED, "You don't have this item");
+	if(sscanf(params, "dd", slot, item)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot]");
+	if(PlayerInv[playerid][slot][Item] == -1) return SendClientMessage(playerid, COLOR_RED, "Invalid slot");
 	Loop(MAX_BOXES)
 	{
 		if(IsPlayerInRangeOfPoint(playerid,2,Boxes[i][SpawnPos][0],Boxes[i][SpawnPos][1],Boxes[i][SpawnPos][2]))
 		{
-			if(Boxes[i][b_Items][slot] != -1) return SendClientMessage(playerid, COLOR_RED, "This slot is taken.");
-			Boxes[i][b_Items][slot] = item;
-			RemoveItemFromInventory(playerid, GetItemInInventory(playerid,item));
+			if(GetFreeBoxSlot(i) == -1) return SendClientMessage(playerid, COLOR_RED, "This box is full.");
+			Boxes[i][b_Items][GetFreeBoxSlot(i)] = item;
+			RemoveItemFromInventory(playerid, slot);
 			format(m_string,sizeof(m_string),"You added the item %s (%d) in the box.",GetItemName(item),item);
 			SendClientMessage(playerid, COLOR_GREEN, m_string);
 			found = true;
@@ -1338,7 +1341,7 @@ CMD:inventory(playerid,params[])
 	if(CountInventoryItems(playerid) == 0) return SendClientMessage(playerid,COLOR_RED,"Nuttin' in your fucking inventory.");
 	new string[256*2];
 	if(strlen(params) == 0) format(params,6,"%d",1);
-	if(IsInventoryFull(playerid)) TextDrawShowForPlayer(playerid,TextFull);
+	if(IsInventoryFull(playerid)) SendClientMessage(playerid, COLOR_RED, "Warning: Your backpack is currently full.");
 	Loop(Player[playerid][InvSize])
 	{
 	    if(PlayerInv[playerid][i][Item] == -1) continue;
@@ -1486,6 +1489,25 @@ CMD:createtree(playerid,params[])
 
 
 // =============================================================================
+stock GetFreeBoxSlot(boxid)
+{
+	for(new i = 0; i < 10; i++)
+	{
+		if(Boxes[boxid][b_Items][i] != -1) continue;
+		return i;	
+	}
+	return -1;
+}
+
+stock IsNumeric(const string[])
+{
+	for (new i = 0, j = strlen(string); i < j; i++)
+	{
+		if (string[i] > '9' || string[i] < '0') return 0;
+	}
+	return 1;
+}
+
 stock HasPlayerWeapon(playerid, weaponid)
 {
     new weapons[13][2];
@@ -1782,6 +1804,7 @@ stock ZombieInit()
 		GetRandomPosInArea(-2743.408447, -2880.190673, -263.408447, -728.190673, pos[0], pos[1], pos[2]);
 		FCNPC_Spawn(npcid,162,  pos[0], pos[1], pos[2]);
 		FCNPC_SetHealth(npcid, 100);
+		printf("NPC %i spawned at %0.2f %0.2f %0.2f", npcid, pos[0], pos[1], pos[2]);
 		SetTimerEx("FCNPC_Moving",500,true,"i",npcid);
 		SetPlayerColor(npcid,COLOR_RED2);
 	}
@@ -1837,24 +1860,35 @@ stock GetWeaponNameEx(weaponid)
 
 stock IsInventoryFull(playerid)
 {
-	return CountInventoryItems(playerid) == Player[playerid][InvSize];
+	return CountInventoryItemsEx(playerid) == Player[playerid][InvSize];
 }
 
 stock CountInventoryItems(playerid)
 {
 	new tmp = 0;
-	Loop(Player[playerid][InvSize])
+	Loop(MAX_INV_ITEMS)
 	{
 		if(PlayerInv[playerid][i][Item] != -1) tmp++;
 	}
 	return tmp;
 }
 
+stock CountInventoryItemsEx(playerid)
+{
+	new tmp = 0;
+	Loop(MAX_INV_ITEMS)
+	{
+		if(PlayerInv[playerid][i][Item] != -1) tmp += PlayerInv[playerid][i][Amount];
+	}
+	return tmp;
+}
+
+
 stock DropAllItemsFromInventory(playerid)
 {
     new Float:pos[3];
     GetPlayerPos(playerid,pos[0],pos[1],pos[2]);
-	Loop(Player[playerid][InvSize])
+	Loop(MAX_INV_ITEMS)
 	{
         if(PlayerInv[playerid][i][Item] == -1) continue;
         CreateItem(PlayerInv[playerid][i][Item],PlayerInv[playerid][i][Amount],pos[0]+frandom(5.0),pos[1]+frandom(5.0),pos[2],0.0, 0.0, 0.0);
@@ -1877,12 +1911,12 @@ stock RemoveItemFromInventory(playerid,slot,amount = 1)
 	}
 }
 
-stock DropItemFromInventory(playerid,slot)
+stock DropItemFromInventory(playerid,slot, amount = 1)
 {
-    if(PlayerInv[playerid][slot][Item] != -1)
+    if(PlayerInv[playerid][slot][Item] != -1 && PlayerInv[playerid][slot][Amount] >= amount)
     {
         ApplyAnimation(playerid, "BOMBER", "BOM_Plant_Loop", 4.0, false, 0, 0, 0, 0);
-   		printf("[DropItemFromInv] Item %s (%d) removed from slot %d by %s (%d)", GetItemName(PlayerInv[playerid][slot][Item]),PlayerInv[playerid][slot][Item],slot,Player[playerid][Name],playerid);
+   		printf("[DropItemFromInv] Item %s (%d) %ix removed from slot %d by %s (%d)", GetItemName(PlayerInv[playerid][slot][Item]),PlayerInv[playerid][slot][Item],amount,slot,Player[playerid][Name],playerid);
    		new Float:pos[3];
 	    GetPlayerPos(playerid,pos[0],pos[1],pos[2]);
 
@@ -1891,9 +1925,9 @@ stock DropItemFromInventory(playerid,slot)
 
 	    MapAndreas_FindZ_For2DCoord(pos[0],pos[1],pos[2]);
         CreateItem(PlayerInv[playerid][slot][Item],1,pos[0],pos[1],pos[2],0.0, 0.0, 0.0);
-		format(m_string,sizeof(m_string),"You dropped item %s (%d) from slot %d",PlayerInv[playerid][slot][Name],PlayerInv[playerid][slot][Item],slot);
+		format(m_string,sizeof(m_string),"You dropped %ix item %s (%d) from slot %d",amount,PlayerInv[playerid][slot][Name],PlayerInv[playerid][slot][Item],slot);
 		SendClientMessage(playerid,COLOR_RED,m_string);
-		if(PlayerInv[playerid][slot][Amount] > 1) PlayerInv[playerid][slot][Amount]--;
+		if(PlayerInv[playerid][slot][Amount] > amount) PlayerInv[playerid][slot][Amount] -= amount;
 		else MoveItemsInInventory(playerid,slot);
 	}
 }
@@ -1902,7 +1936,7 @@ stock MoveItemsInInventory(playerid,startslot)
 {
 	PlayerInv[playerid][startslot][Item] = -1;
 	PlayerInv[playerid][startslot][Amount] = 0;
-	LoopEx(startslot,Player[playerid][InvSize])
+	LoopEx(startslot,MAX_INV_ITEMS-1)
 	{
 	    if(PlayerInv[playerid][i+1][Item] == -1) continue;
         PlayerInv[playerid][i][Item] = PlayerInv[playerid][i+1][Item];
@@ -1924,7 +1958,7 @@ stock AddItemToInventory(playerid,modelid,amount = 1)
 	}
 	else
 	{
-		Loop(Player[playerid][InvSize])
+		Loop(MAX_INV_ITEMS)
 		{
 		    if(PlayerInv[playerid][i][Item] != -1) continue;
 			PlayerInv[playerid][i][Item] = modelid;
@@ -1939,7 +1973,7 @@ stock AddItemToInventory(playerid,modelid,amount = 1)
 
 stock IsItemInInventory(playerid,modelid,amount = 1)
 {
-	Loop(Player[playerid][InvSize])
+	Loop(MAX_INV_ITEMS)
 	{
         if(PlayerInv[playerid][i][Item] == -1) continue;
         if(PlayerInv[playerid][i][Item] == modelid && PlayerInv[playerid][i][Amount] >= amount) return true;
@@ -1949,7 +1983,7 @@ stock IsItemInInventory(playerid,modelid,amount = 1)
 
 stock GetItemInInventory(playerid,modelid)
 {
-	Loop(Player[playerid][InvSize])
+	Loop(MAX_INV_ITEMS)
 	{
         if(PlayerInv[playerid][i][Item] == -1) continue;
         if(PlayerInv[playerid][i][Item] == modelid) return i;
@@ -1976,7 +2010,7 @@ stock SavePlayerInventory(playerid)
 	mysql_tquery(g_SQL, m_string);
 	if(CountInventoryItems(playerid) != 0)
 	{
-		Loop(Player[playerid][InvSize])
+		Loop(MAX_INV_ITEMS)
 		{
 		   	if(PlayerInv[playerid][i][Item] == -1 || PlayerInv[playerid][i][Item] == 0) continue;
 			mysql_format(g_SQL, m_string,sizeof(m_string),"INSERT INTO inv_data (Name, ItemModel, ItemAmount) VALUES ('%e', %i, %i)",Player[playerid][Name],PlayerInv[playerid][i][Item],PlayerInv[playerid][i][Amount]);
@@ -2126,8 +2160,8 @@ public MoveDeer(deerid)
     new Float:pos[3];
 	GetObjectPos(Deers[deerid],pos[0],pos[1],pos[2]);
 
-	pos[0] += frandom(2, -2);
-	pos[1] += frandom(2, -2);
+	pos[0] += frandom(2.0, -2.0);
+	pos[1] += frandom(2.0, -2.0);
 	MapAndreas_FindZ_For2DCoord(pos[0],pos[1],pos[2]);
 	MoveObject(Deers[deerid],pos[0],pos[1],pos[2],2);
 }
@@ -2149,11 +2183,11 @@ public FCNPC_Moving(npcid)
 		GetPlayerPos(i,p[0],p[1],p[2]);
 		if(IsPlayerInRangeOfPoint(npcid,50,p[0],p[1],p[2]))
 		{
-			FCNPC_GoTo(npcid,p[0],p[1],p[2],MOVE_TYPE_RUN,10,1);
 		 	if(IsPlayerInRangeOfPoint(npcid,1,p[0],p[1],p[2]))
 			{
 				FCNPC_Punch(npcid,p[0],p[1],p[2],50);
 			}
+			else FCNPC_GoTo(npcid,p[0],p[1],p[2],MOVE_TYPE_RUN,10,1);
 		}
 	}
 }
@@ -2199,7 +2233,6 @@ public Update(playerid)
     SetPlayerProgressBarValue(playerid, Player[playerid][ThirstBar], Player[playerid][Thirst]);
     SetPlayerProgressBarValue(playerid, Player[playerid][HungerBar], Player[playerid][Hunger]);
     SetPlayerProgressBarValue(playerid, Player[playerid][ExpBar], Player[playerid][Experience]);
-    TextDrawHideForPlayer(playerid,TextFull);
 }
 
 public UpdateFuel(playerid)
