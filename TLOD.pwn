@@ -1222,17 +1222,18 @@ CMD:getboxitem(playerid,params[])
 
 CMD:addboxitem(playerid,params[])
 {
-	new slot, item, bool:found = false;
-	if(sscanf(params, "dd", slot, item)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot]");
+	new slot, bool:found = false;
+	if(sscanf(params, "d", slot)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot]");
 	if(PlayerInv[playerid][slot][Item] == -1) return SendClientMessage(playerid, COLOR_RED, "Invalid slot");
 	Loop(MAX_BOXES)
 	{
 		if(IsPlayerInRangeOfPoint(playerid,2,Boxes[i][SpawnPos][0],Boxes[i][SpawnPos][1],Boxes[i][SpawnPos][2]))
 		{
-			if(GetFreeBoxSlot(i) == -1) return SendClientMessage(playerid, COLOR_RED, "This box is full.");
-			Boxes[i][b_Items][GetFreeBoxSlot(i)] = item;
+			new free = GetFreeBoxSlot(i);
+			if(free == -1) return SendClientMessage(playerid, COLOR_RED, "This box is full.");
+			Boxes[i][b_Items][free] = PlayerInv[playerid][slot][Item];
 			RemoveItemFromInventory(playerid, slot);
-			format(m_string,sizeof(m_string),"You added the item %s (%d) in the box.",GetItemName(item),item);
+			format(m_string,sizeof(m_string),"You added the item %s (%d) in the box.",GetItemName(Boxes[i][b_Items][free]),Boxes[i][b_Items][free]);
 			SendClientMessage(playerid, COLOR_GREEN, m_string);
 			found = true;
 			break;
