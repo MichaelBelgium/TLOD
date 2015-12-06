@@ -1,9 +1,8 @@
 /*
 Current updates:
- * Backpack sizes are now based on item count and not slot count
- * Removed useless textdraw
- * Possible to drop multiple items that are stacked in your backpack
- * Edited /addboxitem
+ * Added campfires
+ * changed craft dialog style
+ * Uncooked fish/meat can be cooked with a campfire
 */
 
 #include <a_samp>
@@ -116,21 +115,16 @@ Current updates:
 #define ModelFire 		366
 #define ModelArmour     1242
 #define ModelCamera 	367
-
-//Ammo
 #define ModelAColt 		2037
 #define ModelAShotgun 	2039
 #define ModelASMS 		2038
 #define ModelAAus 		2040
 #define ModelARifle 	2969
-
-//gas
 #define ModelGascan 	1650
 #define ModelEGascan 	2057
-
-//GPS
 #define ModelGpsMap 	19513
 #define ModelWood 		1463
+#define ModelCampfire	841
 
 #define pLoop() 		for(new i = 0, j = GetMaxPlayers(); i < j; i++) if(IsPlayerConnected(i))
 #define Loop(%0)    	for(new i = 0; i < %0; i++)
@@ -152,7 +146,7 @@ Current updates:
 #define MAX_TREES		450
 #define MAX_BOXES       100
 
-#define SQL_PASSWORD    "YVsRzeN83WMmJU8t"
+#define SQL_PASSWORD    ""
 #define SQL_USER        "TLOD"
 #define SQL_DB          "TLOD"
 #define SQL_SERVER      "127.0.0.1"
@@ -253,6 +247,15 @@ enum e_vehicles
 
 new Vehicles[MAX_VEHICLES][e_vehicles];
 
+enum e_campf
+{
+	Float:SpawnPos[3],
+	CampfObject[2],
+	bool:Occupied
+};
+
+new CampFire[MAX_BOXES][e_campf];
+
 enum e_server
 {
 	cTrees,
@@ -324,6 +327,7 @@ forward OnTreesLoaded();
 forward OnVehiclesLoaded();
 forward RegrowTree(treeid);
 forward EndFishing(playerid);
+forward Cook(campfireid, playerid, item);
 
 #define GivePlayerScore(%0,%1) 	SetPlayerScore(%0,GetPlayerScore(%0)+%1)
 #define GivePlayerHunger(%0,%1) Player[%0][Hunger] += %1
@@ -339,7 +343,7 @@ main()
 
 public OnGameModeInit()
 {
-	//mysql_log(LOG_ALL, LOG_TYPE_HTML);
+	//mysql_log(LOG_ALL);
 	g_SQL = mysql_connect(SQL_SERVER, SQL_USER, SQL_DB, SQL_PASSWORD);
 	if(mysql_errno() != 0)	print("Could not connect to database!");
 	
@@ -1003,9 +1007,34 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						GetPlayerPos(playerid, pos[0], pos[1], pos[2]);
 						CreateBox(pos[0]+frandom(2.0), pos[1]+frandom(2.0), pos[2]);
 					}
+					case ModelCampfire:
+					{
+						new Float:pos[3];
+						GetPlayerPos(playerid, pos[0], pos[1], pos[2]);
+						CreateCampfire(pos[0], pos[1], pos[2]);
+					}
+					case ModelFishUC, ModelMeatUC:
+					{
+						new bool:found = false;
+						Loop(MAX_BOXES)
+						{
+							if(IsPlayerInRangeOfPoint(playerid, 3.0, CampFire[i][SpawnPos][0], CampFire[i][SpawnPos][1], CampFire[i][SpawnPos][2]))
+							{
+								if(CampFire[i][Occupied]) return SendClientMessage(playerid, COLOR_RED, "There is already something cooking.");
+								SendClientMessage(playerid, COLOR_RED, "Please wait some seconds untill the meat is cooked.");
+								CampFire[i][Occupied] = true;
+								SetTimerEx("Cook", 60*1000, false, "iii", i, playerid, PlayerInv[playerid][listitem][Item]);
+								found = true;
+								break;
+							}
+						}
+
+						if(!found) return SendClientMessage(playerid, COLOR_RED, "You need to be near a campfire to cook.");
+					}
 					case ModelDeerSkin, ModelCU, ModelIron, ModelWood: return SendClientMessage(playerid,COLOR_RED,"This item is used to craft");
 					case ModelFishRob: 	return SendClientMessage(playerid,COLOR_RED, "This item is used for /fish - You only can drop it");
 					case ModelGpsMap: 	return SendClientMessage(playerid,COLOR_RED, "This item is used for /gps - You only can drop it.");
+					default: return SendClientMessage(playerid, COLOR_RED, "This item is useless");
 				}
 				
 				format(m_string,sizeof(m_string),"You have used a %s (%d)",PlayerInv[playerid][listitem][Name],PlayerInv[playerid][listitem][Item]);
@@ -1103,12 +1132,21 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 						CreateItem(ModelBox, 1, pos[0],pos[1],pos[2],0,0,0);
 					}
 
-					case 6:
+					case 6: //shovel
 					{
 						if(!IsItemInInventory(playerid,ModelCU,2) || !IsItemInInventory(playerid,ModelWood,2)) return SendClientMessage(playerid, COLOR_RED, "You can't craft this item.");
 						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelCU),2);
 						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelWood),2);
 						CreateItem(ModelShovel,1, pos[0],pos[1],pos[2],0,0,0);
+					}
+
+					case 7: //campfire
+					{
+						if(!IsItemInInventory(playerid,ModelWood,6) || !IsItemInInventory(playerid,ModelRope) || !IsItemInInventory(playerid,ModelIron,2)) return SendClientMessage(playerid, COLOR_RED, "You can't craft this item.");
+						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelWood),6);
+						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelRope));
+						RemoveItemFromInventory(playerid, GetItemInInventory(playerid,ModelIron),2);
+						CreateItem(ModelCampfire, 1, pos[0],pos[1],pos[2]-1,0,0,0);
 					}
 				}
 				ApplyAnimation(playerid, "BOMBER", "BOM_Plant_Loop", 4.1, false, 1, 1, 0, 4000, 1);
@@ -1222,8 +1260,8 @@ CMD:getboxitem(playerid,params[])
 
 CMD:addboxitem(playerid,params[])
 {
-	new slot, bool:found = false;
-	if(sscanf(params, "d", slot)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot]");
+	new slot, item, bool:found = false;
+	if(sscanf(params, "dd", slot, item)) return SendClientMessage(playerid, COLOR_RED, "Usage: /addboxitem [slot]");
 	if(PlayerInv[playerid][slot][Item] == -1) return SendClientMessage(playerid, COLOR_RED, "Invalid slot");
 	Loop(MAX_BOXES)
 	{
@@ -1333,7 +1371,7 @@ CMD:lights(playerid, params[])
 
 CMD:craft(playerid,params[])
 {
-	ShowPlayerDialog(playerid,DIALOG_CRAFT,DIALOG_STYLE_LIST,"Crafting","Chainsaw [Needs: 3 iron, 1 rope]\nKnife [Needs: 1 wood, 1 iron]\nBed [Needs: 2 Deer skins, 4 wood]\nToolbox [Needs: 3 Copper, 2 Iron, 1 wood]\nFishing Rob [Needs: 1 iron, 1 wood, 1 rope]\nBox [Needs: 10 woods]\nShovel [Needs: 2 copper, 2 wood]","Craft","Cancel");
+	ShowPlayerDialog(playerid,DIALOG_CRAFT,DIALOG_STYLE_TABLIST_HEADERS,"Crafting","Item\tRequires\nChainsaw\t3x iron + 1x rope\nKnife\t1x wood + 1x iron\nBed\t2x Deer skins + 4x wood\nToolbox\t3x copper + 2x iron + 1x wood\nFishing Rod\t1x iron + 1x wood + 1x rope\nBox\t10x woods + 1x hammer\nShovel\t2x copper + 2x wood\nCampfire\t6x wood + 1x rope + 2x iron","Craft","Cancel");
 	return 1;
 }
 
@@ -1737,6 +1775,21 @@ stock CreateCar(model,Float:x,Float:y,Float:z,Float:rot)
 		Vehicles[i][SpawnPos][3] = rot;
 		Vehicles[i][Veh] = CreateVehicle(model,x,y,z,rot,random(255)+1,random(255)+1,-1);
 		//printf("Vehicle %d/%d created with model %d and pos %0.2f %0.2f %0.2f %0.2f",i,Vehicles[i][Veh],model,x,y,z,rot);
+		break;
+	}
+}
+
+stock CreateCampfire(Float:x, Float:y, Float:z)
+{
+	Loop(MAX_BOXES)
+	{
+		if(CampFire[i][CampfObject][0] != INVALID_OBJECT_ID && CampFire[i][CampfObject][1] != INVALID_OBJECT_ID) continue;
+		CampFire[i][SpawnPos][0] = x;
+		CampFire[i][SpawnPos][1] = y;
+		CampFire[i][SpawnPos][2] = z;
+		CampFire[i][CampfObject][0] = CreateObject(841, x, y, z-1, 0.0, 0.0, 0.0);
+		CampFire[i][CampfObject][1] = CreateObject(18688, x, y, z-2.25, 0.0, 0.0, 0.0);
+		CampFire[i][Occupied] = false;
 		break;
 	}
 }
@@ -2172,6 +2225,17 @@ public RespawnDeer(deerid)
 	new Random = random(sizeof(DeerSpawn));
 	DestroyObject(Deers[deerid]);
 	Deers[deerid] = CreateObject(19315,DeerSpawn[Random][0],DeerSpawn[Random][1],DeerSpawn[Random][2],0,0,0);
+}
+
+public Cook(campfireid, playerid, item)
+{
+	CampFire[campfireid][Occupied] = false;
+	SendClientMessage(playerid, COLOR_GREEN, "Your meat has been cooked.");
+	switch(item)
+	{
+		case ModelMeatUC: CreateItem(ModelMeatC, 1, CampFire[campfireid][SpawnPos][0]+frandom(2.5), CampFire[campfireid][SpawnPos][1]+frandom(2.5),CampFire[campfireid][SpawnPos][2], 0.0, 0.0, 0.0);
+		case ModelFishUC: CreateItem(ModelFishC, 1, CampFire[campfireid][SpawnPos][0]+frandom(2.5), CampFire[campfireid][SpawnPos][1]+frandom(2.5),CampFire[campfireid][SpawnPos][2], 0.0, 0.0, 0.0);
+	}
 }
 
 // ===================================== FCNPC =================================
